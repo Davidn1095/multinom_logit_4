@@ -1,0 +1,44 @@
+# Load the MASS package for statistical methods, including ordinal logistic regression
+library(MASS)
+
+# Convert the 'Presion' column in the Chapman.Cuali DataFrame to a factor with specified levels
+Chapman.Cuali$Presion <- factor(Chapman.Cuali$Presion, levels = c("Optima", "Normal", "Alta", "Descompensada"))
+
+# Convert the 'IMC' column in the Chapman.Cuali DataFrame to a factor with specified levels
+Chapman.Cuali$IMC <- factor(Chapman.Cuali$IMC, levels = c("Normal", "Sobrepeso", "Obesidad"))
+
+# Fit an ordinal logistic regression model with 'Presion' as the dependent variable and 'Edad' and 'Colesterol' as independent variables
+Ajuste.Ordinal.Cuanti <- polr(Presion ~ Edad + Colesterol, data = Chapman.Cuali)
+
+# Display a summary of the fitted ordinal logistic regression model
+summary(Ajuste.Ordinal.Cuanti)
+
+# Extract the coefficients from the model summary
+summary(Ajuste.Ordinal.Cuanti)$coefficients
+
+# Calculate the two-tailed p-values for the coefficients based on their t-values
+2 * pnorm(abs(summary(Ajuste.Ordinal.Cuanti)$coefficients[,"t value"]), lower.tail = F)
+
+# Exponentiate the negative coefficients for 'Edad' and 'Colesterol' for interpretation
+exp(-summary(Ajuste.Ordinal.Cuanti)$coefficients[c("Edad", "Colesterol"), "Value"])
+
+# Exponentiate the coefficients for threshold levels to understand the changes in odds
+exp(summary(Ajuste.Ordinal.Cuanti)$coefficients[c("Optima|Normal", "Normal|Alta", "Alta|Descompensada"), "Value"])
+
+# Calculate confidence intervals for the model parameters
+confint.default(Ajuste.Ordinal.Cuanti)
+
+# Predict the probabilities of each category for the first 10 observations
+predict(Ajuste.Ordinal.Cuanti, type = "probs")[1:10,]
+
+# Predict the class (category of 'Presion') for the first 10 observations
+predict(Ajuste.Ordinal.Cuanti, type = "class")[1:10]
+
+# Create a contingency table comparing actual 'Presion' categories with predicted ones
+table(Chapman.Cuali$Presion, predict(Ajuste.Ordinal.Cuanti, type = "class"))
+
+# Retrieve the deviance of the fitted model, a measure of goodness of fit
+Ajuste.Ordinal.Cuanti$deviance
+
+# Calculate the p-value for the deviance statistic, testing the overall significance of the model
+pchisq(Ajuste.Ordinal.Cuanti$deviance, 595, lower.tail = F)
